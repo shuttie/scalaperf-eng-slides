@@ -4,10 +4,10 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>Is scala code slow?</title>
 
 		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/black.css">
+		<link rel="stylesheet" href="css/theme/beige.css">
 
 		<!-- Theme used for syntax highlighting of code -->
 		<link rel="stylesheet" href="lib/css/zenburn.css">
@@ -20,14 +20,406 @@
 			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
 			document.getElementsByTagName( 'head' )[0].appendChild( link );
 		</script>
+		<style media="screen" type="text/css">
+		  .reveal .slides footer {
+        position:absolute;
+        bottom: 1em;
+        left: -10%;
+				font-size: 20px;
+      }
+			.reveal .highlight-line {
+				opacity: 1;
+				visibility: visible;
+			}
+			.reveal .highlight-line .visible {
+				background-color: #666666;
+			}
+			.reveal .hljs mark {
+				background-color: #666666;
+			}
+			header {
+				position: absolute;
+				background-color: black;
+				width: 100%;
+				color: white
+			}
+			footer {
+				width: 100%;
+				position: absolute;
+				bottom: 10px;
+			}
+		</style>
 	</head>
 	<body>
+		<header>&nbsp;<img src="images/scalaio.png" height="20px"></header>
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<section id="title">
+					<br/>
+					<img src="images/scala-slowpoke.png" class="plain" height="200px"/>
+					<h1>Is scala code slow?</h1>
+					<br/>
+					<p>Grebennikov Roman <a href="http://twitter.com/public_void_grv"><img src="images/twitter.png" height="25px" class="plain" style="margin: 0px 0px;"/></a> <a href="http://findify.io">Findify</a></p>
+					<p>scala.io / 2016</p>
+				</section>
+				<section id="intro">
+					<h2>Intro: cool things</h2>
+					<table>
+						<tr>
+							<td>
+								<ul>
+									<li>FP style</li>
+									<li>type system</li>
+									<li>pattern matching</li>
+								</ul>
+							</td>
+							<td>
+								<ul>
+									<li>laziness</li>
+									<li>collections</li>
+									<li>etc...</li>
+								</ul>
+							</td>
+						</tr>
+					</table>
+				</section>
+				<section>
+					<h2>Intro: hot cool things</h2>
+					<p>Scala &amp; code hot spots:</p>
+					<ul>
+						<li>More readable</li>
+						<li>
+							Less predictable:
+							<ul class="fragment">
+								<li>create new objects</li>
+								<li>do unexpected computations</li>
+								<li>surprize JVM</li>
+							</ul>
+						</li>
+					</ul>
+				</section>
+				<section id="agenda">
+					<h2>Agenda</h2>
+					<p>
+						Basics:
+						<ul>
+							<li>Performance measuring is hard</li>
+							<li>What JVM &amp; scalac do with your code</li>
+							<li>JMH &amp; how to measure <strike>wrong</strike> right</li>
+						</ul>
+					</p>
+				</section>
+				<section>
+					<h2>Agenda</h2>
+					<p>
+						Real life:
+						<ul>
+							<li>Pattern matching</li>
+							<li>Recursion</li>
+							<li>Collections</li>
+						</ul>
+					</p>
+				</section>
+				<section id="bench-hard">
+					<h2>Is benchmarking really hard?</h2>
+					<pre><code data-trim data-noescape style="padding: 25px;">
+val start = System.currentTimeMillis()
+for (i <- 0 to 1000) yield doSomeStuff()
+val perf = (System.currentTimeMillis() - start) / 1000.0
+					</code></pre>
+					<ul>
+						<li>loop can be eliminated by optimizer</li>
+						<li>doSomeStuff() can be interpreted, not compiled</li>
+						<li>the whole loop may take less than 1ms</li>
+						<li>... and many more</li>
+					</ul>
+				</section>
+				<section>
+					<h2>HotSpot JVM is smart<span style="color: grey;" class="fragment">er than you</span></h2>
+				</section>
+				<section>
+					<h2>Hit the compile button</h2>
+					<img src="images/magic_1.png" class="plain" height="300px"/>
+				</section>
+				<section>
+					<h2>Hit the compile button</h2>
+					<img src="images/magic_2.png" class="plain" height="300px"/>
+				</section>
+				<section>
+					<h2>Hit the compile button</h2>
+					<img src="images/magic_3.png" class="plain" height="300px"/>
+				</section>
+				<section>
+					<h2>Hit the compile button</h2>
+					<img src="images/magic_4.png" class="plain" height="300px"/>
+				</section>
+				<section>
+					<h2>Hit the compile button</h2>
+					<img src="images/cpu_diagram.png" class="plain" height="300px"/>
+				</section>
+				<section>
+					<h2>Hit the compile button</h2>
+					<img src="images/cpu_diagram.png" class="plain" height="300px"/>
+					<ul>
+						<li>
+							C0 &#10230; C1 &#10230; C2
+							<ul>
+								<li>more agressive: code is faster</li>
+								<li>more time for warm-up</li>
+							</ul>
+						</li>
+						<li class="fragment">Pitfalls everywhere</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Need reliable result?</h2>
+					<table>
+						<tr>
+							<td style="vertical-align: middle;">
+								<p>Avoid all the traps:</p>
+								<ul class="fragment">
+									<li>time measurement</li>
+									<li>dead code elimination</li>
+									<li>constant folding</li>
+									<li>loop unrolling</li>
+									<li>... and many more!</li>
+								</ul>
+							</td>
+							<td>
+								<img class="fragment" src="images/reinvent_the_wheel.jpg" height="400px">
+							</td>
+						</tr>
+					</table>
+				</section>
+				<section>
+					<h2>Meet JMH</h2>
+					<p>Harness for implementing &amp; running [micro] benchmarks.</p>
+					<p><strong>sbt-jmh</strong> plugin for easy scala integration:</p>
+					<pre><code data-trim data-noescape style="padding: 25px;">
+package io.scala
+
+import org.openjdk.jmh.annotations._
+
+class Demo {
+	@Benchmark
+	def helloWorld = 42
+}
+					</code></pre>
+				</section>
+				<section>
+					live!
+				</section>
+				<section>
+					<h2>JVM performance testing: deep dive</h2>
+					<ul>
+						<li>
+							Alexey Shilipev talks &amp; blog posts:
+							<ul>
+								<li>Performance methodology how-to</li>
+								<li>Java benchmarking: timestamping failures</li>
+								<li>Nanotrusting the nanotime</li>
+							</ul>
+						</li>
+						<li>JMH code samples</li>
+					</ul>
+				</section>
+				<section data-background="images/carpet.jpg">
+					<h2><span style="background-color: white; padding: 10px">Pattern matching</span></h2>
+				</section>
+				<section>
+					<h2>Problem</h2>
+					<pre><code data-trim data-noescape style="padding: 25px;" class="scala">
+trait Base
+class Foo extends Base
+class Bar extends Base
+class Baz extends Base
+
+// which class does implement Base?
+def select(value:Base) = ???
+					</code></pre>
+				</section>
+				<section>
+					<h2>If vs pattern matching</h2>
+					<pre><code data-trim data-noescape style="padding: 25px;" class="scala">
+@Benchmark
+def measurePatMat = input match {
+	case _:Foo => 1
+	case _:Bar => 2
+	case _:Baz => 3
+	case _ => 4
+}
+					</code></pre>
+					<pre><code data-trim data-noescape style="padding: 25px;" class="scala">
+@Benchmark
+def measureIf = if (input.isInstanceOf[Foo])
+  1
+else if (input.isInstanceOf[Bar])
+  2
+else if (input.isInstanceOf[Baz])
+  3
+else
+  <span class="fragment highlight-blue">4</span>
+					</code></pre>
+				</section>
+				<section>
+					<h2>Results</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
+Benchmark                           (classType)  Mode  Cnt  Score   Error  Units
+ScalaTypeMatch.measureIf                    foo  avgt  100  3.491 ± 0.025  ns/op
+ScalaTypeMatch.measureIf                    bar  avgt  100  4.065 ± 0.016  ns/op
+ScalaTypeMatch.measureIf                    baz  avgt  100  4.167 ± 0.022  ns/op
+ScalaTypeMatch.measurePatternMatch          foo  avgt  100  3.484 ± 0.020  ns/op
+ScalaTypeMatch.measurePatternMatch          bar  avgt  100  4.058 ± 0.008  ns/op
+ScalaTypeMatch.measurePatternMatch          baz  avgt  100  4.168 ± 0.015  ns/op
+					</code></pre>
+				</section>
+				<section>
+					<h2>Results</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
+Benchmark                           (classType)  Mode  Cnt  Score   Error  Units
+ScalaTypeMatch.measureIf                    foo  avgt  100  3.491 ± 0.025  ns/op
+ScalaTypeMatch.measureIf                    bar  avgt  100  4.065 ± 0.016  ns/op
+<mark>ScalaTypeMatch.measureIf                    baz  avgt  100  4.167 ± 0.022  ns/op</mark>
+ScalaTypeMatch.measurePatternMatch          foo  avgt  100  3.484 ± 0.020  ns/op
+ScalaTypeMatch.measurePatternMatch          bar  avgt  100  4.058 ± 0.008  ns/op
+<mark>ScalaTypeMatch.measurePatternMatch          baz  avgt  100  4.168 ± 0.015  ns/op</mark>
+					</code></pre>
+				</section>
+				<section>
+					<h2>Machine code to the rescue</h2>
+					<ul>
+						<li>Shows all the truth</li>
+						<li>Only the brave can read it</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Want some x86_64?</h2>
+					<ul>
+						<li class="fragment">-XX:+PrintAssembly: dump all the compiled methods: <strong class="fragment">TL&amp;DR</strong></li>
+						<li class="fragment">perf: Linux CPU perf counters: <strong class="fragment">too low level</strong></li>
+						<li class="fragment">JMH perfasm: combines both, made for humans: <strong class="fragment" style="color: green;">OK</strong></li>
+					</ul>
+				</section>
+				<section>
+					live!
+				</section>
+				<section>
+					<img src="images/leonidas_wtf.jpg">
+					<p class="fragment">I want my scala back!</p>
+				</section>
+				<section>
+					<h2>Inside pattern matching</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="asm">
+<span class="fragment highlight-current-green">mov    0x10(%r8),%r10d    ;*getfield someClass</span>
+<span class="fragment highlight-current-green">mov    0x8(%r12,%r10,8),%ecx  ;*instanceof</span>
+<span class="fragment highlight-current-green">cmp    $0xf8019288,%ecx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Foo&apos;)}</span>
+<span class="fragment highlight-current-green">je     0x00007f3e0d222734  ;*ifeq</span>
+<span class="fragment highlight-current-green">cmp    $0xf8019306,%ecx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Bar&apos;)}</span>
+<span class="fragment highlight-current-green">je     0x00007f3e0d222761  ;*ifeq</span>
+<span class="fragment highlight-current-green">cmp    $0xf8019248,%ecx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Baz&apos;)}</span>
+<span class="fragment highlight-current-green">jne    0x00007f3e0d22281d  ;*instanceof</span>
+...
+<span class="fragment highlight-current-green">callq  0x00007f3e0d046020  ; *invokevirtual consume</span></code></pre>
+				</section>
+				<section>
+					<h2>Inside if-else</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="asm">
+mov    0x10(%r8),%r11d    ;*getfield someClass
+mov    0x8(%r12,%r11,8),%edx  ;*instanceof
+cmp    $0xf8019288,%edx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Foo&apos;)}
+je     0x00007faa4522ac3b  ;*ifeq
+cmp    $0xf8019306,%edx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Bar&apos;)}
+je     0x00007faa4522ac71  ;*ifeq
+cmp    $0xf8019248,%edx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Baz&apos;)}
+jne    0x00007faa4522ad31  ;*instanceof
+...
+callq  0x00007faa45046020  ; *invokevirtual consume</code></pre>
+				</section>
+				<section>
+					<h2>Same x86_64 code!</h2>
+					<p class="fragment">pattern matching ~ if-else<span class="fragment">*</span></p>
+				</section>
+				<section>
+					<h2>What about Options?</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
+// match by Option
+@Benchmark
+def measureMatchOption() = someString match {
+  case Some(str) => str
+  case _ => "default value"
+}
+
+// null check
+@Benchmark
+def measureIfNull() = if (nullableString != null)
+  nullableString
+else
+  "default value"</code></pre>
+				</section>
+				<section>
+					<h2>Results</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
+Benchmark                            Mode  Cnt  Score   Error  Units
+ScalaOptionMatch.measureIfNull       avgt  100  3.677 ± 0.035  ns/op
+ScalaOptionMatch.measureMatchOption  avgt  100  4.153 ± 0.066  ns/op
+  				</code></pre>
+					<ul>
+						<li class="fragment">Results are close, but null check is faster</li>
+						<li class="fragment">Why?</li>
+					</ul>
+					<img class="plain" height="900px" src="images/large_slowpoke.png" style="position: absolute; right: -250px;"/>
+				</section>
+				<section>
+					<h2>Inside nullcheck</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="asm">
+mov    0x10(%r10),%r11d   ;*getfield nullableString
+test   %r11d,%r11d
+je     0x00007fb929230422  ;*ifnull
+lea    (%r12,%r11,8),%rdx  ;*getfield nullableString
+...
+callq  0x00007fb929046020  ;*invokevirtual consume
+					</code></pre>
+				</section>
+				<section>
+					<h2>Inside option matching</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="asm">
+mov    0xc(%r10),%r11d    ;*getfield someString
+mov    0x8(%r12,%r11,8),%r8d  ; implicit exception: dispatches to 0x00007f7be1233739
+cmp    $0xf80191cc,%r8d   ;   {metadata(&apos;scala/Some&apos;)}
+jne    0x00007f7be1233711
+lea    (%r12,%r11,8),%r10  ;*instanceof
+mov    0xc(%r10),%r11d    ;*getfield value
+mov    0x8(%r12,%r11,8),%r10d  ; implicit exception: dispatches to 0x00007f7be1233749
+cmp    $0xf80002da,%r10d  ;   {metadata(&apos;java/lang/String&apos;)}
+jne    0x00007f7be1233725
+...
+callq  0x00007f7be1046020  ;*invokevirtual consume
+          </code></pre>
+				</section>
+				<section>
+					<h2>What's the difference?</h2>
+					<ul>
+						<li>
+							Null check: single branch
+						</li>
+						<li>
+							Match by Option: TWO branches
+							<ul>
+								<li>TWO branches</li>
+								<li>Option[T]: T is erased</li>
+								<li>JVM cannot</li>
+								<li></li>
+								<li></li>
+							</ul>
+						</li>
+					</ul>
+				</section>
 			</div>
 		</div>
+
+		<footer>
+			<img src="images/sponsors.png" height="40px"/>
+		</footer>
 
 		<script src="lib/js/head.min.js"></script>
 		<script src="js/reveal.js"></script>
@@ -36,13 +428,19 @@
 			// More info https://github.com/hakimel/reveal.js#configuration
 			Reveal.initialize({
 				history: true,
+				progress: true,
+				slideNumber: true,
+				width: 1200,
+				height: 700,
+				transition: 'none',
+				transitionSpeen: 'fast',
 
 				// More info https://github.com/hakimel/reveal.js#dependencies
 				dependencies: [
 					{ src: 'plugin/markdown/marked.js' },
 					{ src: 'plugin/markdown/markdown.js' },
 					{ src: 'plugin/notes/notes.js', async: true },
-					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); hljs.configure({tabReplace: '  '}); } }
 				]
 			});
 		</script>

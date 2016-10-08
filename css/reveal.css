@@ -354,8 +354,8 @@ html:-moz-full-screen-ancestor {
 
 /* Global transition speed settings */
 .reveal[data-transition-speed="fast"] .slides section {
-  -webkit-transition-duration: 400ms;
-          transition-duration: 400ms; }
+  -webkit-transition-duration: 200ms;
+          transition-duration: 200ms; }
 
 .reveal[data-transition-speed="slow"] .slides section {
   -webkit-transition-duration: 1200ms;
@@ -363,8 +363,8 @@ html:-moz-full-screen-ancestor {
 
 /* Slide-specific transition speed overrides */
 .reveal .slides section[data-transition-speed="fast"] {
-  -webkit-transition-duration: 400ms;
-          transition-duration: 400ms; }
+  -webkit-transition-duration: 200ms;
+          transition-duration: 200ms; }
 
 .reveal .slides section[data-transition-speed="slow"] {
   -webkit-transition-duration: 1200ms;
@@ -973,8 +973,8 @@ html:-moz-full-screen-ancestor {
 
 /* Global transition speed settings */
 .reveal[data-transition-speed="fast"] > .backgrounds .slide-background {
-  -webkit-transition-duration: 400ms;
-          transition-duration: 400ms; }
+  -webkit-transition-duration: 200ms;
+          transition-duration: 200ms; }
 
 .reveal[data-transition-speed="slow"] > .backgrounds .slide-background {
   -webkit-transition-duration: 1200ms;
