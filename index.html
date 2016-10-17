@@ -26,6 +26,7 @@
         bottom: 1em;
         left: -10%;
 				font-size: 20px;
+				z-index: -1;
       }
 			.reveal .highlight-line {
 				opacity: 1;
@@ -47,6 +48,7 @@
 				width: 100%;
 				position: absolute;
 				bottom: 10px;
+				z-index: -1;
 			}
 		</style>
 	</head>
@@ -405,16 +407,429 @@ callq  0x00007f7be1046020  ;*invokevirtual consume
 						<li>
 							Match by Option: TWO branches
 							<ul>
-								<li>TWO branches</li>
-								<li>Option[T]: T is erased</li>
-								<li>JVM cannot</li>
-								<li></li>
-								<li></li>
+								<li>Are we dealing with an Option?</li>
+								<li>Is there a String inside?</li>
 							</ul>
 						</li>
 					</ul>
 				</section>
-			</div>
+				<section>
+					<h2>nullcheck vs patmat: Conclusion</h2>
+					<p class="fragment">Pattern matching may have overhead :(</p>
+					<p class="fragment">The overhead is small :)</p>
+				</section>
+				<section data-background-video="images/slowmatte2.mp4" data-background-video-loop="true" style="z-index: 999">
+					<h2><span style="background-color: white; padding: 10px">Tail recursion</span></h2>
+				</section>
+				<section>
+					<h2>Tail call optimization</h2>
+					<ul>
+						<li>Compiler trick: transform recursive call into a loop</li>
+						<li>scalac can do it only for <b>tail</b> calls</li>
+						<li>hotspot has no native support for TCO</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Meet Fibonacci</h2>
+					<img src="images/fibonacci.jpg"/>
+					<p>0 1 1 2 3 5 8 13 21 ...</p>
+				</section>
+				<section>
+					<h2>Recursion: with and without tail</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">@tailrec
+private def fibonacciTailRec(n: Int, a:Int, b:Int):Int = n match {
+  case 0 => a
+  case _ => fibonacciTailRec(n-1, b, a+b)
+}</code></pre>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">def fibonacciRec(n:Int):Int = n match {
+  case 0 => a
+	case _ => fibonacciRec(n-1, b, a+b)
+}</code></pre>
+				</section>
+				<section>
+					<h2>Old good loop</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">def fibonacciLoop(n:Int):Int = {
+  var a: Int = 0
+  var b: Int = 1
+  var i: Int = 0
+	while (i < n) {
+	  val sum = a + b
+	  a = b
+	  b = sum
+	  i += 1
+	}
+	a
+}</code></pre>
+				</section>
+				<section>
+					<h2>Results</h2>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
+Benchmark                      (N)  Mode  Cnt   Score   Error  Units
+ScalaFibonacci.measureLoop      10  avgt   10   6.510 ± 0.177  ns/op
+ScalaFibonacci.measureLoop      20  avgt   10  10.431 ± 0.446  ns/op
+ScalaFibonacci.measureLoop      40  avgt   10  20.051 ± 0.026  ns/op
+ScalaFibonacci.measureRec       10  avgt   10  18.733 ± 0.049  ns/op
+ScalaFibonacci.measureRec       20  avgt   10  35.517 ± 0.162  ns/op
+ScalaFibonacci.measureRec       40  avgt   10  77.468 ± 0.774  ns/op
+ScalaFibonacci.measureTailRec   10  avgt   10  12.477 ± 0.289  ns/op
+ScalaFibonacci.measureTailRec   20  avgt   10   9.660 ± 0.190  ns/op
+ScalaFibonacci.measureTailRec   40  avgt   10  20.165 ± 2.081  ns/op
+</code></pre>
+					<ul>
+						<li>measureLoop is close to measureTailRec</li>
+						<li>measureRec is 2x-4x slower than measureTailRec</li>
+						<li>measureTailRec for N=10 is slower than for N=20</li>
+					</ul>
+				</section>
+				<section>
+					<h2>bytecode to the rescue!</h2>
+					<ul>
+						<li>JVM Bytecode is simple <img src="images/trollface.jpg" height="25px" class="plain" style="margin: 0px;"/></li>
+						<li><b>javap</b>: a tool for class file disassembly</li>
+					</ul>
+					<pre><code data=trim data-noescape style="padding: 25px;" class="shell">Welcome to Scala 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_102)
+Type in expressions for evaluation. Or try :help.
+
+scala> :javap -c -p ru.jugvrn.ScalaFibonacci
+Compiled from "ScalaFibonacci.scala"
+public class ru.jugvrn.ScalaFibonacci {
+private int N;
+
+...</code></pre>
+				</section>
+				<section>
+					<h2>Why is non-TCO function so slow?</h2>
+				</section>
+				<section>
+					<h3>Fibonacci with TCO</h3>
+					<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="java">       0: iload_1           <span class="fragment">// Load first function argument, N</span>
+       1: istore        5
+       3: iload         5
+       5: tableswitch   {
+                     0: 37  <span class="fragment">// if N == 0, goto :37</span>
+               default: 24  <span class="fragment">// else goto :24</span>
+          }
+      24: iload_1           <span class="fragment">// get arg1     (stack: N)</span>
+      25: iconst_1          <span class="fragment">// push 1       (stack: 1, N)</span>
+      26: isub              <span class="fragment">// subtract     (stack: N-1)</span>
+      27: iload_3           <span class="fragment">// get arg3     (stack: b, N-1)</span>
+      28: iload_2           <span class="fragment">// get arg2     (stack: a, b, N-1)</span>
+      29: iload_3           <span class="fragment">// get arg3     (stack: b, a, b, N-1)</span>
+      30: iadd              <span class="fragment">// add 2 vars   (stack: a+b, b, N-1)</span>
+      31: istore_3          <span class="fragment">// set arg3=a+b (stack: b, N-1)</span>
+      32: istore_2          <span class="fragment">// set arg2=b   (stack: N-1)</span>
+      33: istore_1          <span class="fragment">// set arg1=a   (stack: )</span>
+      34: goto          0   <span class="fragment">// jump to the function start</span>
+      37: iload_2
+      38: ireturn           <span class="fragment">// return arg2=b</span>
+</code></pre>
+				</section>
+				<section>
+					<h3>Fibonacci without TCO</h3>
+					<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="java">       0: iload_1           <span class="fragment">// Load first function argument, N</span>
+       1: istore        4
+       3: iload         4
+       5: tableswitch   {
+                     0: 38  <span class="fragment">// if N == 0, goto :38</span>
+               default: 24  <span class="fragment">// else goto :24</span>
+          }
+      24: aload_0           <span class="fragment">// get <i>this</i> reference         (stack: this)</span>
+      25: iload_1           <span class="fragment">// get arg1                   (stack: N, this)</span>
+      26: iconst_1          <span class="fragment">// push 1                     (stack: 1, N, this)</span>
+      27: isub              <span class="fragment">// subtract                   (stack: N-1, this)</span>
+      28: iload_3           <span class="fragment">// get arg3                   (stack: b, N-1, this)</span>
+      29: iload_2           <span class="fragment">// get arg2                   (stack: a, b, N-1, this)</span>
+      30: iload_3           <span class="fragment">// get arg3                   (stack: b, a, b, N-1, this)</span>
+      31: iadd              <span class="fragment">// add 2 vars from the stack  (stack: a+b, b, N-1, this)</span>
+      32: <span class="fragment highlight-red">invokevirtual</span> #40 <span class="fragment">// call fibonacciRec:(III)I   (stack: )</span>
+      35: goto          39
+      38: iload_2
+      39: ireturn           <span class="fragment">// return arg2=b</span>
+</code></pre>
+				</section>
+				<section>
+					<h2>The secret life of invokevirtual</h2>
+					<ul>
+						<li>JVM takes control back from your code</li>
+						<li>Resolves method by name</li>
+						<li>Looks up method addr in vtable</li>
+						<li>Creates stack frame</li>
+						<li>Passes arguments</li>
+						<li>Jumps back to your function code</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Go deeper</h2>
+          <pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="x86asm">....[Hottest Region 1].................................................
+C2, level 4, ru.jugvrn.ScalaFibonacci::fibonacciRec, version 462 (62 bytes)
+
+	0x00007f89f51fea20: mov    0x8(%rsi),%r10d     <span class="fragment">; note the real function address</span>
+  0x00007f89f51fea24: shl    $0x3,%r10
+  0x00007f89f51fea28: cmp    %r10,%rax
+  0x00007f89f51fea2b: jne    0x00007f89f5045e20  ;   {runtime_call}
+  0x00007f89f51fea31: xchg   %ax,%ax
+  0x00007f89f51fea34: nopl   0x0(%rax,%rax,1)
+  0x00007f89f51fea3c: xchg   %ax,%ax
+    [Verified Entry Point]
+  0x00007f89f51fea40: mov    %eax,-0x14000(%rsp)
+
+		... skip ...
+
+  0x00007f89f51fea73: callq  0x00007f89f5046020  <span class="fragment">; jump straight to JVM guts!</span>
+	                                               ; OopMap{off=88}
+                                                 ;*invokevirtual fibonacciRec
+                                                 ;   {optimized virtual_call}
+</code></pre>
+
+				</section>
+				<section>
+					<h2>goto vs invokevirtual</h2>
+					<p>Goto: simple unconditional jump, one x86 instruction.</p>
+					<p>Invokevirtual: a lot of overhead happening under the hood.</p>
+				</section>
+				<section>
+					<h2>Why is N=10 slower than N=20?</h2>
+				</section>
+				<section>
+					live!
+				</section>
+				<section>
+					<h2>More about recursion</h2>
+					<ul>
+						<li><a href="http://shipilev.net/blog/2014/java-scala-divided-we-fail">A.Shipilёv, Scala vs Java: divided we fail</a></li>
+						<li><a href=" http://shipilev.net/blog/2015/black-magic-method-dispatch">A.Shipilёv, The black magic of Java method dispatch</a></li>
+						<li><a href="https://wiki.openjdk.java.net/dashboard.action">Oracle HotSpotInternals wiki</a></li>
+					</ul>
+				</section>
+				<section>
+					<h2>Recursive conclusion</h2>
+					<ul>
+						<li>TCO is equals to loop</li>
+						<li>
+							TCO is cool
+							<ul>
+								<li>stop thinking with loops</li>
+								<li>stop computing fibonacci numbers</li>
+								<li>start writing readable recursive code</li>
+							</ul>
+						</li>
+					</ul>
+				</section>
+				<section data-background="images/slowpoke_collection.png">
+					<h2><span style="background-color: white; padding: 10px">Collections</span></h2>
+				</section>
+				<section>
+					<h2>Scala collections</h2>
+					<ul>
+						<li>Easy way to do complex things</li>
+						<li>Cool things cannot be free: what's the overhead?</li>
+					</ul>
+				</section>
+				<section>
+					<h2>So many things to benchmark!</h2>
+					<table>
+						<tr>
+							<td><img src="images/immutable_hierarchy.png" width="600px"/></td>
+							<td><img src="images/mutable_hierarchy.png" width="600px"/></td>
+						</tr>
+					</table>
+					<br/>
+					<small>* Diagrams by Lokesh Jein: http://lkumarjain.blogspot.ru/2015/01/scala-collection-framework.html</small>
+				</section>
+				<section>
+					<h2>The problem</h2>
+					<ul>
+						<li>Given a sequence of integer numbers</li>
+						<li>Compute sum of their squares</li>
+					</ul>
+					<pre><code>
+  in: [1, 2, 3]
+  out: 1^2 + 2^2 + 3^2 = 14
+					</code></pre>
+				</section>
+				<section>
+					<h2>Old-school solution</h2>
+					<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">
+val array:Array[Int] = ???
+
+@Benchmark
+def baseline:Long = {
+  var i = 0
+  var sum = 0L
+  while (i &lt SIZE) {
+	  sum += array(i) * array(i)
+	  i += 1
+	}
+	sum
+}
+					</code></pre>
+				</section>
+				<section>
+					<h2>FP-way</h2>
+					<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">
+val list:List[Int] = ???
+
+@Benchmark
+def reduce:Long = {
+  list.reduce( (sum, next) => sum + next*next)
+}
+					</code></pre>
+				</section>
+				<section>
+					<h2>Quiz</h2>
+					<p>Reduce performance is ____________:</p>
+					<ol>
+						<li class="fragment">the same as loop</li>
+						<li class="fragment">1.5x faster than loop</li>
+						<li class="fragment">2x slower than loop</li>
+						<li class="fragment"><span class="fragment highlight-green">7x slower than loop</span></li>
+					</ol>
+				</section>
+				<section>
+					<h2>Results</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
+	ScalaListSquares.baseline       100  avgt  100     71.666 ±    0.467  ns/op
+	ScalaListSquares.baseline      1000  avgt  100    663.231 ±    3.935  ns/op
+	ScalaListSquares.baseline     10000  avgt  100   6522.092 ±   11.523  ns/op
+	ScalaListSquares.reduce         100  avgt  100    519.791 ±    8.574  ns/op
+	ScalaListSquares.reduce        1000  avgt  100   7466.572 ±  152.091  ns/op
+	ScalaListSquares.reduce       10000  avgt  100  78867.647 ± 1303.189  ns/op
+</code></pre>
+					<ul>
+						<li class="fragment">List != Array</li>
+					</ul>
+				</section>
+				<section>
+					<h2>JMH perf profiler</h2>
+					Hardware performance counters to the rescue!
+					<pre><code  data=trim data-noescape style="padding: 15px; max-height: 600px;" class="scala">
+  jmh:run -prof perf ru.jugvrn.ScalaListSquares.*
+					</code></pre>
+				</section>
+				<section>
+					<h2>Loop perf counters</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 600px;" class="scala">
+    9931.655974      task-clock (msec)         #    0.475 CPUs utilized
+            932      context-switches          #    0.094 K/sec
+             46      cpu-migrations            #    0.005 K/sec
+            113      page-faults               #    0.011 K/sec
+ 25,735,792,483      cycles                    #    2.591 GHz
+  9,267,196,267      stalled-cycles-frontend   #   36.01% frontend cycles idle
+ 66,270,818,101      instructions              #    2.58  insns per cycle
+                                               #    0.14  stalled cycles per insn
+<mark>  1,876,355,486      branches                  #  188.927 M/sec                  </mark>
+      2,411,709      branch-misses             #    0.13% of all branches
+ 14,960,422,185      L1-dcache-loads           # 1506.337 M/sec
+    492,379,799      L1-dcache-load-misses     #    3.29% of all L1-dcache hits
+<mark>         62,251      LLC-loads                 #    0.006 M/sec                  </mark>
+        399,928      L1-icache-load-misses     #    0.040 M/sec
+  7,623,879,953      dTLB-loads                #  767.634 M/sec
+         13,381      dTLB-load-misses          #    0.00% of all dTLB cache hits
+         15,045      iTLB-loads                #    0.002 M/sec
+          3,078      iTLB-load-misses          #   20.46% of all iTLB cache hits
+    465,275,969      L1-dcache-prefetch-misses #   46.848 M/sec
+</code></pre>
+				</section>
+				<section>
+					<h2>List perf counters</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 600px;" class="scala">
+    9988.074145      task-clock (msec)         #    0.477 CPUs utilized
+          2,230      context-switches          #    0.223 K/sec
+            386      cpu-migrations            #    0.039 K/sec
+            208      page-faults               #    0.021 K/sec
+ 24,191,015,522      cycles                    #    2.422 GHz
+  5,917,795,429      stalled-cycles-frontend   #   24.46% frontend cycles idle
+ 78,929,694,484      instructions              #    3.26  insns per cycle
+                                               #    0.07  stalled cycles per insn
+ <mark>13,743,825,372      branches                  # 1376.024 M/sec                  </mark>
+      2,356,556      branch-misses             #    0.02% of all branches
+ 26,411,359,322      L1-dcache-loads           # 2644.289 M/sec
+  1,235,559,432      L1-dcache-load-misses     #    4.68% of all L1-dcache hits
+<mark>    151,011,070      LLC-loads                 #   15.119 M/sec                  </mark>
+      2,217,386      L1-icache-load-misses     #    0.222 M/sec
+ 24,726,569,508      dTLB-loads                # 2475.609 M/sec
+        127,828      dTLB-load-misses          #    0.00% of all dTLB cache hits
+        655,836      iTLB-loads                #    0.066 M/sec
+        121,926      iTLB-load-misses          #   18.59% of all iTLB cache hits
+  1,168,908,448      L1-dcache-prefetch-misses #  117.030 M/sec
+</code></pre>
+				</section>
+				<section>
+					<h2>List vs Array</h2>
+					<img src="images/linkedlist.png" class="plain" width="700px"/>
+				</section>
+				<section>
+					<h2>List vs Array</h2>
+					<img src="images/array.png" class="plain" width="700px"/>
+				</section>
+			  <section>
+<h2>Get rid of List!</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">
+	val array:Array[Int] = ???
+
+	@Benchmark
+	def reduceArray:Long = {
+	  array.reduce( (sum, next) => sum + next*next)
+	}
+</code></pre>
+			  </section>
+			<section>
+       <h2>Results</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
+	ScalaListSquares.baseline       100  avgt  100     71.666 ±    0.467  ns/op
+	ScalaListSquares.baseline      1000  avgt  100    663.231 ±    3.935  ns/op
+	ScalaListSquares.baseline     10000  avgt  100   6522.092 ±   11.523  ns/op
+	ScalaListSquares.reduce         100  avgt  100    519.791 ±    8.574  ns/op
+	ScalaListSquares.reduce        1000  avgt  100   7466.572 ±  152.091  ns/op
+	ScalaListSquares.reduce       10000  avgt  100  78867.647 ± 1303.189  ns/op
+<mark>  ScalaListSquares.reduceArray    100  avgt   30    345.431 ±   10.189  ns/op
+  ScalaListSquares.reduceArray   1000  avgt   30   7692.723 ±  223.362  ns/op
+  ScalaListSquares.reduceArray  10000  avgt   30  86228.642 ± 1907.360  ns/op</mark>
+</code></pre>
+				<img src="images/wat.jpeg" height="200px" class="fragment"/>
+			</section>
+			<section>
+				<h2>JMH Gc profiler</h2>
+				<p>Lightweight low-overhead JMX-based GC profiling</p>
+				<pre><code  data=trim data-noescape style="padding: 15px; max-height: 600px;" class="scala">
+jmh:run -prof gc ru.jugvrn.ScalaListSquares.reduceArray
+				</code></pre>
+			</section>
+			<section>
+				<h2>GC profiling results</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">reduceArray                                       88434.926 ± 4464.565   ns/op
+<mark>reduceArray:·gc.alloc.rate                         1682.633 ±   81.873  MB/sec</mark>
+reduceArray:·gc.alloc.rate.norm                  155936.207 ±    0.497    B/op
+reduceArray:·gc.churn.PS_Eden_Space                1683.088 ±  130.033  MB/sec
+reduceArray:·gc.churn.PS_Eden_Space.norm         155924.367 ± 7109.615    B/op
+reduceArray:·gc.churn.PS_Survivor_Space               0.078 ±    0.068  MB/sec
+reduceArray:·gc.churn.PS_Survivor_Space.norm          7.232 ±    6.315    B/op
+reduceArray:·gc.count                               160.000             counts
+reduceArray:·gc.time                                 92.000                 ms
+</code></pre>
+				<p class="fragment">
+        	<img src="images/wat.jpeg" height="200px"/>
+					<img src="images/wat.jpeg" height="200px"/>
+					<img src="images/wat.jpeg" height="200px"/>
+				</p>
+			</section>
+			<section>
+       <h2>Results</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
+	ScalaListSquares.baseline       100  avgt  100     71.666 ±    0.467  ns/op
+	ScalaListSquares.baseline      1000  avgt  100    663.231 ±    3.935  ns/op
+	ScalaListSquares.baseline     10000  avgt  100   6522.092 ±   11.523  ns/op
+	ScalaListSquares.reduce         100  avgt  100    519.791 ±    8.574  ns/op
+	ScalaListSquares.reduce        1000  avgt  100   7466.572 ±  152.091  ns/op
+	ScalaListSquares.reduce       10000  avgt  100  78867.647 ±  1303.189  ns/op
+  ScalaListSquares.reduceArray    100  avgt   30    345.431 ±   10.189  ns/op
+  ScalaListSquares.reduceArray   1000  avgt   30   7692.723 ±  223.362  ns/op
+  ScalaListSquares.reduceArray  10000  avgt   30  86228.642 ± 1907.360  ns/op
+	ScalaListSquares.reduce_2.12    100  avgt  100    510.653 ±    1.026  ns/op
+	ScalaListSquares.reduce_2.12   1000  avgt  100   4855.881 ±   17.871  ns/op
+	ScalaListSquares.reduce_2.12  10000  avgt  100  44134.661 ±  284.137  ns/op
+</code></pre>
+			</section>
 		</div>
 
 		<footer>
