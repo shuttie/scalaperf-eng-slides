@@ -670,14 +670,14 @@ def baseline:Long = {
 val list:List[Int] = ???
 
 @Benchmark
-def reduce:Long = {
-  list.reduce( (sum, next) => sum + next*next)
+def foldList:Long = {
+  list.foldLeft(0L)( (sum, next) => sum + next*next)
 }
 					</code></pre>
 				</section>
 				<section>
 					<h2>Quiz</h2>
-					<p>Reduce performance is ____________:</p>
+					<p>Fold performance is ____________:</p>
 					<ol>
 						<li class="fragment">the same as loop</li>
 						<li class="fragment">1.5x faster than loop</li>
@@ -691,9 +691,9 @@ def reduce:Long = {
 	ScalaListSquares.baseline       100  avgt  100     71.666 ±    0.467  ns/op
 	ScalaListSquares.baseline      1000  avgt  100    663.231 ±    3.935  ns/op
 	ScalaListSquares.baseline     10000  avgt  100   6522.092 ±   11.523  ns/op
-	ScalaListSquares.reduce         100  avgt  100    519.791 ±    8.574  ns/op
-	ScalaListSquares.reduce        1000  avgt  100   7466.572 ±  152.091  ns/op
-	ScalaListSquares.reduce       10000  avgt  100  78867.647 ± 1303.189  ns/op
+	ScalaListSquares.foldList       100  avgt  100    519.791 ±    8.574  ns/op
+	ScalaListSquares.foldList      1000  avgt  100   7466.572 ±  152.091  ns/op
+	ScalaListSquares.foldList     10000  avgt  100  78867.647 ± 1303.189  ns/op
 </code></pre>
 					<ul>
 						<li class="fragment">List != Array</li>
@@ -768,8 +768,8 @@ def reduce:Long = {
 	val array:Array[Int] = ???
 
 	@Benchmark
-	def reduceArray:Long = {
-	  array.reduce( (sum, next) => sum + next*next)
+	def foldArray:Long = {
+	  array.foldLeft(0L)( (sum, next) => sum + next*next)
 	}
 </code></pre>
 			  </section>
@@ -779,12 +779,12 @@ def reduce:Long = {
 	ScalaListSquares.baseline       100  avgt  100     71.666 ±    0.467  ns/op
 	ScalaListSquares.baseline      1000  avgt  100    663.231 ±    3.935  ns/op
 	ScalaListSquares.baseline     10000  avgt  100   6522.092 ±   11.523  ns/op
-	ScalaListSquares.reduce         100  avgt  100    519.791 ±    8.574  ns/op
-	ScalaListSquares.reduce        1000  avgt  100   7466.572 ±  152.091  ns/op
-	ScalaListSquares.reduce       10000  avgt  100  78867.647 ± 1303.189  ns/op
-<mark>  ScalaListSquares.reduceArray    100  avgt   30    345.431 ±   10.189  ns/op
-  ScalaListSquares.reduceArray   1000  avgt   30   7692.723 ±  223.362  ns/op
-  ScalaListSquares.reduceArray  10000  avgt   30  86228.642 ± 1907.360  ns/op</mark>
+	ScalaListSquares.foldList       100  avgt  100    519.791 ±    8.574  ns/op
+	ScalaListSquares.foldList      1000  avgt  100   7466.572 ±  152.091  ns/op
+	ScalaListSquares.foldList     10000  avgt  100  78867.647 ± 1303.189  ns/op
+<mark>  ScalaListSquares.foldArray      100  avgt   30    345.431 ±   10.189  ns/op
+  ScalaListSquares.foldArray     1000  avgt   30   7692.723 ±  223.362  ns/op
+  ScalaListSquares.foldArray    10000  avgt   30  86228.642 ± 1907.360  ns/op</mark>
 </code></pre>
 				<img src="images/wat.jpeg" height="200px" class="fragment"/>
 			</section>
@@ -792,20 +792,20 @@ def reduce:Long = {
 				<h2>JMH Gc profiler</h2>
 				<p>Lightweight low-overhead JMX-based GC profiling</p>
 				<pre><code  data=trim data-noescape style="padding: 15px; max-height: 600px;" class="scala">
-jmh:run -prof gc ru.jugvrn.ScalaListSquares.reduceArray
+jmh:run -prof gc ru.jugvrn.ScalaListSquares.foldArray
 				</code></pre>
 			</section>
 			<section>
 				<h2>GC profiling results</h2>
-<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">reduceArray                                       88434.926 ± 4464.565   ns/op
-<mark>reduceArray:·gc.alloc.rate                         1682.633 ±   81.873  MB/sec</mark>
-reduceArray:·gc.alloc.rate.norm                  155936.207 ±    0.497    B/op
-reduceArray:·gc.churn.PS_Eden_Space                1683.088 ±  130.033  MB/sec
-reduceArray:·gc.churn.PS_Eden_Space.norm         155924.367 ± 7109.615    B/op
-reduceArray:·gc.churn.PS_Survivor_Space               0.078 ±    0.068  MB/sec
-reduceArray:·gc.churn.PS_Survivor_Space.norm          7.232 ±    6.315    B/op
-reduceArray:·gc.count                               160.000             counts
-reduceArray:·gc.time                                 92.000                 ms
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">foldArray                                       88434.926 ± 4464.565   ns/op
+<mark>foldArray:·gc.alloc.rate                         1682.633 ±   81.873  MB/sec</mark>
+foldArray:·gc.alloc.rate.norm                  155936.207 ±    0.497    B/op
+foldArray:·gc.churn.PS_Eden_Space                1683.088 ±  130.033  MB/sec
+foldArray:·gc.churn.PS_Eden_Space.norm         155924.367 ± 7109.615    B/op
+foldArray:·gc.churn.PS_Survivor_Space               0.078 ±    0.068  MB/sec
+foldArray:·gc.churn.PS_Survivor_Space.norm          7.232 ±    6.315    B/op
+foldArray:·gc.count                               160.000             counts
+foldArray:·gc.time                                 92.000                 ms
 </code></pre>
 				<p class="fragment">
         	<img src="images/wat.jpeg" height="200px"/>
@@ -814,22 +814,174 @@ reduceArray:·gc.time                                 92.000                 ms
 				</p>
 			</section>
 			<section>
-       <h2>Results</h2>
+				<h2>Apples vs Oranges</h2>
+				<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">def baseline:Long = {
+  var i = 0
+  var sum = 0L <span class="fragment">// &lt;- primitive long</span>
+  while (i &lt; SIZE) {
+	  sum += array(i) * array(i)
+	  i += 1
+  }
+  sum
+}</code></pre>
+				<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">def foldArray:Long = {
+  array.foldLeft(0L)( (sum, next) => sum + next*next) <span class="fragment">// &lt;- boxed Long</span>
+}</code></pre>
+				<p class="fragment">Creating a new object on each iteration</p>
+			</section>
+			<section>
+				<h2>Scala collections are generic</h2>
+				<ul>
+					<li>def foldLeft[B](z: B)(op: (B, A) => B): B</li>
+					<li>A &amp; B cannot be primitive<span style="color: red;">*</span></li>
+					<li>No escape from boxing/unboxing ¯\_(ツ)_/¯</li>
+				</ul>
+			</section>
+			<section>
+				<h2>No escape?</h2>
+				<p>It's time for 2.12!</p>
+			</section>
+			<section>
+       <h2>Results with 2.12</h2>
 <pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
 	ScalaListSquares.baseline       100  avgt  100     71.666 ±    0.467  ns/op
 	ScalaListSquares.baseline      1000  avgt  100    663.231 ±    3.935  ns/op
 	ScalaListSquares.baseline     10000  avgt  100   6522.092 ±   11.523  ns/op
-	ScalaListSquares.reduce         100  avgt  100    519.791 ±    8.574  ns/op
-	ScalaListSquares.reduce        1000  avgt  100   7466.572 ±  152.091  ns/op
-	ScalaListSquares.reduce       10000  avgt  100  78867.647 ±  1303.189  ns/op
-  ScalaListSquares.reduceArray    100  avgt   30    345.431 ±   10.189  ns/op
-  ScalaListSquares.reduceArray   1000  avgt   30   7692.723 ±  223.362  ns/op
-  ScalaListSquares.reduceArray  10000  avgt   30  86228.642 ± 1907.360  ns/op
-	ScalaListSquares.reduce_2.12    100  avgt  100    510.653 ±    1.026  ns/op
-	ScalaListSquares.reduce_2.12   1000  avgt  100   4855.881 ±   17.871  ns/op
-	ScalaListSquares.reduce_2.12  10000  avgt  100  44134.661 ±  284.137  ns/op
+	ScalaListSquares.foldList       100  avgt  100    519.791 ±    8.574  ns/op
+	ScalaListSquares.foldList      1000  avgt  100   7466.572 ±  152.091  ns/op
+	ScalaListSquares.foldList     10000  avgt  100  78867.647 ± 1303.189  ns/op
+  ScalaListSquares.foldArray      100  avgt   30    345.431 ±   10.189  ns/op
+  ScalaListSquares.foldArray     1000  avgt   30   7692.723 ±  223.362  ns/op
+  ScalaListSquares.foldArray    10000  avgt   30  86228.642 ± 1907.360  ns/op
+	ScalaListSquares.foldArray12    100  avgt  100    510.653 ±    1.026  ns/op
+	ScalaListSquares.foldArray12   1000  avgt  100   4855.881 ±   17.871  ns/op
+	ScalaListSquares.foldArray12  10000  avgt  100  44134.661 ±  284.137  ns/op
 </code></pre>
 			</section>
+			<section>
+				<h2>Sugar-free scala</h2>
+				scalac -print Foo.scala
+			</section>
+			<section>
+				<h2>2.11 desugared</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px;" class="scala">def foldArray(): Long = scala.Long.unbox(
+  scala.this.Predef.intArrayOps(ScalaListSquares.this.array())
+	  .foldLeft(
+		  scala.Long.box(0L),
+			{ (new <$anon: Function2>(ScalaListSquares.this): Function2) }
+		)
+	);
+final class anonfun$foldArray$1 extends scala.runtime.AbstractFunction2$mcJJI$sp with Serializable {
+  final def apply(part: Long, next: Int): Long =
+	  anonfun$foldArray$1.this.apply$mcJJI$sp(part, next);
+  def apply$mcJJI$sp(part: Long, next: Int): Long =
+	  part.+(next.*(next));
+  final def apply(v1: Object, v2: Object): Object =
+	  scala.Long.box(                   // here it is!
+		  anonfun$foldArray$1.this.apply(
+			  scala.Long.unbox(v1),         // again!
+				scala.Int.unbox(v2)           // and again!
+			)
+		);
+  def &lt;init&gt;($outer: ru.jugvrn.ScalaListSquares): <$anon: Function2> =
+    anonfun$foldArray$1.super.<init>();
+}</code></pre>
+			</section>
+			<section>
+				<h2>2.12 desugared</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px;" class="scala">
+def foldArray(): Long = scala.Long.unbox(
+  new collection.mutable.ArrayOps$ofInt(
+	  scala.Predef.intArrayOps(ScalaListSquares.this.array())
+	).foldLeft(
+	  scala.Long.box(0L),
+		{ ((part: Long, next: Int) =>
+			ScalaListSquares.this.$anonfun$foldArray$1(part, next)) }
+	)
+);
+
+final def $anonfun$foldArray$1(part: Long, next: Int): Long =
+  part.+(next.*(next)); // Where is box/unbox?
+
+</code></pre>
+			</section>
+			<section>
+				<h2>Lambdas in 2.11/2.12</h2>
+				<table>
+					<tr>
+						<td>
+							<p>2.11, java7:</p>
+							<ul>
+								<li>FunctionN class wrapper</li>
+								<li>compile-time linking</li>
+								<li>invokevirtual</li>
+							</ul>
+						</td>
+						<td>
+							<p>2.12, java8:</p>
+							<ul>
+								<li>lambda as a method</li>
+								<li>run-time linking</li>
+								<li>invokedynamic</li>
+								<li>JFunctionN functional interface</li>
+							</ul>
+						</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>JFunction2</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px;" class="scala">
+package scala.runtime.java8;
+
+@FunctionalInterface
+public interface JFunction2$mcDII$sp extends scala.Function2, java.io.Serializable {
+  double apply$mcDII$sp(int v1, int v2);
+
+  default Object apply(Object v1, Object v2) {
+		return scala.runtime.BoxesRunTime.boxToDouble( // found it!
+		  apply$mcDII$sp(
+			  scala.runtime.BoxesRunTime.unboxToInt(v1),
+				scala.runtime.BoxesRunTime.unboxToInt(v2)
+			)
+		);
+	}
+}</code></pre>
+			</section>
+			<section>
+				<h2>Scala collections</h2>
+				<ul>
+					<li>Be aware of boxing</li>
+					<li>Even Array can cause boxing</li>
+					<li>Alternative collections: debox, abc</li>
+				</ul>
+			</section>
+			<section>
+				<h2>The end</h2>
+				<p>Scala is slow:</p>
+				<ul>
+					<li>simple to write beautiful, but slow code</li>
+					<li>collections + primitives = pain</li>
+					<li>JVM doesn't like scalac bytecode</li>
+				</ul>
+				<br/><br/>
+				<p>Scala is fast:</p>
+				<ul>
+					<li>Know your bytecode: beautiful code can be fast</li>
+					<li>Scala 2.12 is more JVM-friendly</li>
+				</ul>
+			</section>
+			<section>
+				<h2>Materials</h2>
+				<p>Benchmarks: <a href="https://github.com/shuttie/scala-perf-talk">github.com/shuttie/scala-perf-talk</a></p>
+				<p>Slides: <a href="http://dfdx.me/talks/scala_is_slow_eng">dfdx.me/talks/scala_is_slow</a></p>
+				<p>Me: <a href="https://twitter.com/public_void_grv">@public_void_grv</a>, <a href="mailto:grv@dfdx.me">grv@dfdx.me</a></p>
+			</section>
+			<section>
+				<h2>Questions</h2>
+				<img src="images/head-boom.gif"/>
+			</section>
+
 		</div>
 
 		<footer>
