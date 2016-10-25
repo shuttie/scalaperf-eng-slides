@@ -312,7 +312,7 @@ ScalaTypeMatch.measurePatternMatch          bar  avgt  100  4.058 ± 0.008  ns/o
 				<section>
 					<h2>Inside pattern matching</h2>
 					<pre><code data=trim data-noescape style="padding: 25px;" class="asm">
-<span class="fragment highlight-current-green">mov    0x10(%r8),%r10d    ;*getfield someClass</span>
+<span class="fragment highlight-current-green">mov    0x10(%r8),%r10d    ;*getfield someClass // someClass = Baz</span>
 <span class="fragment highlight-current-green">mov    0x8(%r12,%r10,8),%ecx  ;*instanceof</span>
 <span class="fragment highlight-current-green">cmp    $0xf8019288,%ecx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Foo&apos;)}</span>
 <span class="fragment highlight-current-green">je     0x00007f3e0d222734  ;*ifeq</span>
@@ -343,15 +343,18 @@ callq  0x00007faa45046020  ; *invokevirtual consume</code></pre>
 				</section>
 				<section>
 					<h2>What about Options?</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
-// match by Option
+					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">@Setup
+def setup() = {
+	someString = Some("hello")
+	nullableString = "hello"
+}
+
 @Benchmark
 def measureMatchOption() = someString match {
   case Some(str) => str
   case _ => "default value"
 }
 
-// null check
 @Benchmark
 def measureIfNull() = if (nullableString != null)
   nullableString
@@ -518,7 +521,7 @@ private int N;
       30: iadd              <span class="fragment">// add 2 vars   (stack: a+b, b, N-1)</span>
       31: istore_3          <span class="fragment">// set arg3=a+b (stack: b, N-1)</span>
       32: istore_2          <span class="fragment">// set arg2=b   (stack: N-1)</span>
-      33: istore_1          <span class="fragment">// set arg1=a   (stack: )</span>
+      33: istore_1          <span class="fragment">// set arg1=N-1 (stack: )</span>
       34: goto          0   <span class="fragment">// jump to the function start</span>
       37: iload_2
       38: ireturn           <span class="fragment">// return arg2=b</span>
@@ -591,7 +594,14 @@ C2, level 4, ru.jugvrn.ScalaFibonacci::fibonacciRec, version 462 (62 bytes)
 					<h2>Why is N=10 slower than N=20?</h2>
 				</section>
 				<section>
+					<h2>N=10..20 tailrec performance</h2>
+					<img src="images/tailrec10_20.png"/>
+				</section>
+				<section>
 					live!
+				</section>
+				<section>
+					<h2>Loop unroll</h2>
 				</section>
 				<section>
 					<h2>More about recursion</h2>
@@ -688,12 +698,12 @@ def foldList:Long = {
 				<section>
 					<h2>Results</h2>
 <pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
-	ScalaListSquares.baseline       100  avgt  100     71.666 ±    0.467  ns/op
-	ScalaListSquares.baseline      1000  avgt  100    663.231 ±    3.935  ns/op
-	ScalaListSquares.baseline     10000  avgt  100   6522.092 ±   11.523  ns/op
-	ScalaListSquares.foldList       100  avgt  100    519.791 ±    8.574  ns/op
-	ScalaListSquares.foldList      1000  avgt  100   7466.572 ±  152.091  ns/op
-	ScalaListSquares.foldList     10000  avgt  100  78867.647 ± 1303.189  ns/op
+  ScalaListSquares.baseline       100  avgt  100     71.695 ±   0.524  ns/op
+	ScalaListSquares.baseline      1000  avgt  100    655.157 ±   2.248  ns/op
+	ScalaListSquares.baseline     10000  avgt  100   6457.211 ±  17.542  ns/op
+	ScalaListSquares.foldList       100  avgt  100    525.201 ±   5.903  ns/op
+	ScalaListSquares.foldList      1000  avgt  100   4880.612 ±  23.996  ns/op
+	ScalaListSquares.foldList     10000  avgt  100  47098.707 ±  67.334  ns/op
 </code></pre>
 					<ul>
 						<li class="fragment">List != Array</li>
@@ -772,19 +782,20 @@ def foldList:Long = {
 	  array.foldLeft(0L)( (sum, next) => sum + next*next)
 	}
 </code></pre>
+         <img src="images/oh_yes.gif"/>
 			  </section>
 			<section>
        <h2>Results</h2>
 <pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
-	ScalaListSquares.baseline       100  avgt  100     71.666 ±    0.467  ns/op
-	ScalaListSquares.baseline      1000  avgt  100    663.231 ±    3.935  ns/op
-	ScalaListSquares.baseline     10000  avgt  100   6522.092 ±   11.523  ns/op
-	ScalaListSquares.foldList       100  avgt  100    519.791 ±    8.574  ns/op
-	ScalaListSquares.foldList      1000  avgt  100   7466.572 ±  152.091  ns/op
-	ScalaListSquares.foldList     10000  avgt  100  78867.647 ± 1303.189  ns/op
-<mark>  ScalaListSquares.foldArray      100  avgt   30    345.431 ±   10.189  ns/op
-  ScalaListSquares.foldArray     1000  avgt   30   7692.723 ±  223.362  ns/op
-  ScalaListSquares.foldArray    10000  avgt   30  86228.642 ± 1907.360  ns/op</mark>
+	ScalaListSquares.baseline       100  avgt  100     71.695 ±   0.524  ns/op
+	ScalaListSquares.baseline      1000  avgt  100    655.157 ±   2.248  ns/op
+	ScalaListSquares.baseline     10000  avgt  100   6457.211 ±  17.542  ns/op
+	ScalaListSquares.foldList       100  avgt  100    525.201 ±   5.903  ns/op
+	ScalaListSquares.foldList      1000  avgt  100   4880.612 ±  23.996  ns/op
+	ScalaListSquares.foldList     10000  avgt  100  47098.707 ±  67.334  ns/op
+<mark>  ScalaListSquares.foldArray      100  avgt  100    470.091 ±   1.249  ns/op
+  ScalaListSquares.foldArray     1000  avgt  100   6192.707 ±  12.944  ns/op
+  ScalaListSquares.foldArray    10000  avgt  100  60182.719 ± 215.496  ns/op</mark>
 </code></pre>
 				<img src="images/wat.jpeg" height="200px" class="fragment"/>
 			</section>
@@ -844,19 +855,20 @@ foldArray:·gc.time                                 92.000                 ms
 			<section>
        <h2>Results with 2.12</h2>
 <pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
-	ScalaListSquares.baseline       100  avgt  100     71.666 ±    0.467  ns/op
-	ScalaListSquares.baseline      1000  avgt  100    663.231 ±    3.935  ns/op
-	ScalaListSquares.baseline     10000  avgt  100   6522.092 ±   11.523  ns/op
-	ScalaListSquares.foldList       100  avgt  100    519.791 ±    8.574  ns/op
-	ScalaListSquares.foldList      1000  avgt  100   7466.572 ±  152.091  ns/op
-	ScalaListSquares.foldList     10000  avgt  100  78867.647 ± 1303.189  ns/op
-  ScalaListSquares.foldArray      100  avgt   30    345.431 ±   10.189  ns/op
-  ScalaListSquares.foldArray     1000  avgt   30   7692.723 ±  223.362  ns/op
-  ScalaListSquares.foldArray    10000  avgt   30  86228.642 ± 1907.360  ns/op
-	ScalaListSquares.foldArray12    100  avgt  100    510.653 ±    1.026  ns/op
-	ScalaListSquares.foldArray12   1000  avgt  100   4855.881 ±   17.871  ns/op
-	ScalaListSquares.foldArray12  10000  avgt  100  44134.661 ±  284.137  ns/op
+	ScalaListSquares.baseline       100  avgt  100     71.695 ±   0.524  ns/op
+	ScalaListSquares.baseline      1000  avgt  100    655.157 ±   2.248  ns/op
+	ScalaListSquares.baseline     10000  avgt  100   6457.211 ±  17.542  ns/op
+	ScalaListSquares.foldList       100  avgt  100    525.201 ±   5.903  ns/op
+	ScalaListSquares.foldList      1000  avgt  100   4880.612 ±  23.996  ns/op
+	ScalaListSquares.foldList     10000  avgt  100  47098.707 ±  67.334  ns/op
+  ScalaListSquares.foldArray      100  avgt  100    470.091 ±   1.249  ns/op
+  ScalaListSquares.foldArray     1000  avgt  100   6192.707 ±  12.944  ns/op
+  ScalaListSquares.foldArray    10000  avgt  100  60182.719 ± 215.496  ns/op
+<mark>  ScalaListSquares.foldArray12    100  avgt  100    482.969 ±   1.975  ns/op
+	ScalaListSquares.foldArray12   1000  avgt  100   7114.175 ±  19.649  ns/op
+	ScalaListSquares.foldArray12  10000  avgt  100  71247.456 ± 311.178  ns/op</mark>
 </code></pre>
+				<img src="images/jaw_drop.gif" height="200px"/>
 			</section>
 			<section>
 				<h2>Sugar-free scala</h2>
@@ -948,6 +960,36 @@ public interface JFunction2$mcDII$sp extends scala.Function2, java.io.Serializab
 	}
 }</code></pre>
 			</section>
+			<section>
+				<h2>2.11 vs 2.12</h2>
+				<p>Why foldArray@2.12 is slower than foldArray@2.11?</p>
+				<img src="images/why.gif"/>
+			</section>
+			<section>
+				<h2>2.11: hottest methods</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px;" class="scala">....[Hottest Methods (after inlining)]...........................................
+96.29%   97.82%     C2, level 4  ru.jugvrn.generated.ScalaListSquares_foldArray_jmhTest
+ 0.37%    0.19%       libjvm.so  StringTable::unlink_or_oops_do
+ 0.34%    0.08%       libjvm.so  SpinPause
+ 0.16%    0.04%       libjvm.so  ParallelTaskTerminator::offer_termination
+ 0.14%    0.01%       libjvm.so  PSScavengeKlassClosure::do_klass
+ 0.09%    0.05%    libc-2.23.so  vfprintf
+
+</code></pre>
+			</section>
+			<section>
+				<h2>2.12: hottest methods</h2>
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px;" class="scala">....[Hottest Methods (after inlining)]...........................................
+89.76%   91.56%     C2, level 4  ru.jugvrn.generated.ScalaListSquares_foldArray_jmhTest
+ 4.71%    4.70%     C2, level 4  scala.collection.mutable.ArrayOps$ofLong::foldLeft
+ 0.44%    0.45%     C2, level 4  ru.jugvrn.ScalaListSquares::foldArray, version 780
+ 0.26%    0.01%       libjvm.so  SpinPause
+ 0.20%    0.29%       libjvm.so  StringTable::unlink_or_oops_do
+ 0.17%    0.10%       libjvm.so  fileStream::write
+ 0.14%    0.13%    libc-2.23.so  vfprintf
+</code></pre>
+			</section>
+
 			<section>
 				<h2>Scala collections</h2>
 				<ul>
