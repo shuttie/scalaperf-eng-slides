@@ -64,8 +64,14 @@
 					<p>Grebennikov Roman <a href="http://twitter.com/public_void_grv"><img src="images/twitter.png" height="25px" class="plain" style="margin: 0px 0px;"/></a> <a href="http://findify.io">Findify</a></p>
 					<p>scala.io / 2016</p>
 				</section>
+				<section>
+					<h2>Disclaimer</h2>
+					<p>The resemblance of any opinion, recommendation <br/>
+             or comment made during this presentation to performance<br/>
+						 tuning advice is merely coincidental</p>
+				</section>
 				<section id="intro">
-					<h2>Intro: cool things</h2>
+					<h2>Intro: cool things in scala</h2>
 					<table>
 						<tr>
 							<td>
@@ -92,10 +98,10 @@
 						<li>More readable</li>
 						<li>
 							Less predictable:
-							<ul class="fragment">
-								<li>create new objects</li>
-								<li>do unexpected computations</li>
-								<li>surprize JVM</li>
+							<ul>
+								<li class="fragment">create new objects</li>
+								<li class="fragment">do unexpected computations</li>
+								<li class="fragment">surprize the JVM</li>
 							</ul>
 						</li>
 					</ul>
@@ -105,9 +111,9 @@
 					<p>
 						Basics:
 						<ul>
-							<li>Performance measuring is hard</li>
-							<li>What JVM &amp; scalac do with your code</li>
-							<li>JMH &amp; how to measure <strike>wrong</strike> right</li>
+							<li class="fragment">Performance measuring is hard</li>
+							<li class="fragment">What JVM &amp; scalac do with your code</li>
+							<li class="fragment">JMH &amp; how to measure <strike>wrong</strike> right</li>
 						</ul>
 					</p>
 				</section>
@@ -124,16 +130,16 @@
 				</section>
 				<section id="bench-hard">
 					<h2>Is benchmarking really hard?</h2>
-					<pre><code data-trim data-noescape style="padding: 25px;">
+					<pre class="fragment"><code data-trim data-noescape style="padding: 25px; font-size: 25px; line-height: 30px">
 val start = System.currentTimeMillis()
 for (i <- 0 to 1000) yield doSomeStuff()
 val perf = (System.currentTimeMillis() - start) / 1000.0
 					</code></pre>
 					<ul>
-						<li>loop can be eliminated by optimizer</li>
-						<li>doSomeStuff() can be interpreted, not compiled</li>
-						<li>the whole loop may take less than 1ms</li>
-						<li>... and many more</li>
+						<li class="fragment">loop can be eliminated by optimizer</li>
+						<li class="fragment">doSomeStuff() can be interpreted, not compiled</li>
+						<li class="fragment">the whole loop may take less than 1ms</li>
+						<li class="fragment">... and many more</li>
 					</ul>
 				</section>
 				<section>
@@ -166,8 +172,8 @@ val perf = (System.currentTimeMillis() - start) / 1000.0
 						<li>
 							C0 &#10230; C1 &#10230; C2
 							<ul>
-								<li>more agressive: code is faster</li>
-								<li>more time for warm-up</li>
+								<li class="fragment">more agressive: code is faster</li>
+								<li class="fragment">more time for warm-up</li>
 							</ul>
 						</li>
 						<li class="fragment">Pitfalls everywhere</li>
@@ -196,8 +202,8 @@ val perf = (System.currentTimeMillis() - start) / 1000.0
 				<section>
 					<h2>Meet JMH</h2>
 					<p>Harness for implementing &amp; running [micro] benchmarks.</p>
-					<p><strong>sbt-jmh</strong> plugin for easy scala integration:</p>
-					<pre><code data-trim data-noescape style="padding: 25px;">
+					<p class="fragment"><strong>sbt-jmh</strong> plugin for easy scala integration:</p>
+					<pre class="fragment"><code data-trim data-noescape style="padding: 25px;  font-size: 25px; line-height: 30px">
 package io.scala
 
 import org.openjdk.jmh.annotations._
@@ -217,12 +223,12 @@ class Demo {
 						<li>
 							Alexey Shilipev talks &amp; blog posts:
 							<ul>
-								<li>Performance methodology how-to</li>
-								<li>Java benchmarking: timestamping failures</li>
-								<li>Nanotrusting the nanotime</li>
+								<li><a href="https://shipilev.net/#performance-101">Performance methodology how-to</a></li>
+								<li><a href="https://shipilev.net/#benchmarking-1">the art of Java benchmarking</a></li>
+								<li><a href="https://shipilev.net/blog/2014/nanotrusting-nanotime/">Nanotrusting the nanotime</a></li>
 							</ul>
 						</li>
-						<li>JMH code samples</li>
+						<li><a href="http://hg.openjdk.java.net/code-tools/jmh/file/tip/jmh-samples/src/main/java/org/openjdk/jmh/samples/">JMH code samples</a></li>
 					</ul>
 				</section>
 				<section data-background="images/carpet.jpg">
@@ -230,29 +236,24 @@ class Demo {
 				</section>
 				<section>
 					<h2>Problem</h2>
-					<pre><code data-trim data-noescape style="padding: 25px;" class="scala">
-trait Base
+					<pre><code data-trim data-noescape style="padding: 25px; font-size: 25px; line-height: 30px" class="scala">trait Base
 class Foo extends Base
 class Bar extends Base
 class Baz extends Base
 
 // which class does implement Base?
-def select(value:Base) = ???
-					</code></pre>
+def select(value:Base) = ???</code></pre>
 				</section>
 				<section>
 					<h2>If vs pattern matching</h2>
-					<pre><code data-trim data-noescape style="padding: 25px;" class="scala">
-@Benchmark
+					<pre><code data-trim data-noescape style="padding: 5px; font-size: 25px; line-height: 30px" class="scala">@Benchmark
 def measurePatMat = input match {
 	case _:Foo => 1
 	case _:Bar => 2
 	case _:Baz => 3
 	case _ => 4
-}
-					</code></pre>
-					<pre><code data-trim data-noescape style="padding: 25px;" class="scala">
-@Benchmark
+}</code></pre>
+					<pre><code data-trim data-noescape style="padding: 5px; font-size: 25px; line-height: 30px" class="scala">@Benchmark
 def measureIf = if (input.isInstanceOf[Foo])
   1
 else if (input.isInstanceOf[Bar])
@@ -260,32 +261,28 @@ else if (input.isInstanceOf[Bar])
 else if (input.isInstanceOf[Baz])
   3
 else
-  <span class="fragment highlight-blue">4</span>
-					</code></pre>
+  4</code></pre>
 				</section>
 				<section>
 					<h2>Results</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
-Benchmark                           (classType)  Mode  Cnt  Score   Error  Units
-ScalaTypeMatch.measureIf                    foo  avgt  100  3.491 ± 0.025  ns/op
-ScalaTypeMatch.measureIf                    bar  avgt  100  4.065 ± 0.016  ns/op
-ScalaTypeMatch.measureIf                    baz  avgt  100  4.167 ± 0.022  ns/op
-ScalaTypeMatch.measurePatternMatch          foo  avgt  100  3.484 ± 0.020  ns/op
-ScalaTypeMatch.measurePatternMatch          bar  avgt  100  4.058 ± 0.008  ns/op
-ScalaTypeMatch.measurePatternMatch          baz  avgt  100  4.168 ± 0.015  ns/op
-					</code></pre>
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 23px; line-height: 25px" class="scala">Benchmark                   (classType)  Mode  Cnt  Score   Error  Units
+ScalaTypeMatch.measureIf            foo  avgt  100  3.491 ± 0.025  ns/op
+ScalaTypeMatch.measureIf            bar  avgt  100  4.065 ± 0.016  ns/op
+ScalaTypeMatch.measureIf            baz  avgt  100  4.167 ± 0.022  ns/op
+ScalaTypeMatch.measurePatternMatch  foo  avgt  100  3.484 ± 0.020  ns/op
+ScalaTypeMatch.measurePatternMatch  bar  avgt  100  4.058 ± 0.008  ns/op
+ScalaTypeMatch.measurePatternMatch  baz  avgt  100  4.168 ± 0.015  ns/op</code></pre>
 				</section>
 				<section>
 					<h2>Results</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
-Benchmark                           (classType)  Mode  Cnt  Score   Error  Units
-ScalaTypeMatch.measureIf                    foo  avgt  100  3.491 ± 0.025  ns/op
-ScalaTypeMatch.measureIf                    bar  avgt  100  4.065 ± 0.016  ns/op
-<mark>ScalaTypeMatch.measureIf                    baz  avgt  100  4.167 ± 0.022  ns/op</mark>
-ScalaTypeMatch.measurePatternMatch          foo  avgt  100  3.484 ± 0.020  ns/op
-ScalaTypeMatch.measurePatternMatch          bar  avgt  100  4.058 ± 0.008  ns/op
-<mark>ScalaTypeMatch.measurePatternMatch          baz  avgt  100  4.168 ± 0.015  ns/op</mark>
-					</code></pre>
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 23px; line-height: 25px" class="scala">Benchmark                   (classType)  Mode  Cnt  Score   Error  Units
+ScalaTypeMatch.measureIf            foo  avgt  100  3.491 ± 0.025  ns/op
+ScalaTypeMatch.measureIf            bar  avgt  100  4.065 ± 0.016  ns/op
+<mark>ScalaTypeMatch.measureIf            baz  avgt  100  4.167 ± 0.022  ns/op</mark>
+ScalaTypeMatch.measurePatternMatch  foo  avgt  100  3.484 ± 0.020  ns/op
+ScalaTypeMatch.measurePatternMatch  bar  avgt  100  4.058 ± 0.008  ns/op
+<mark>ScalaTypeMatch.measurePatternMatch  baz  avgt  100  4.168 ± 0.015  ns/op</mark></code></pre>
+					<p class="fragment">Is it really the same?</p>
 				</section>
 				<section>
 					<h2>Machine code to the rescue</h2>
@@ -293,6 +290,7 @@ ScalaTypeMatch.measurePatternMatch          bar  avgt  100  4.058 ± 0.008  ns/o
 						<li>Shows all the truth</li>
 						<li>Only the brave can read it</li>
 					</ul>
+					<p class="fragment"><img src="images/hackerman.jpg" height="300px"/></p>
 				</section>
 				<section>
 					<h2>Want some x86_64?</h2>
@@ -311,28 +309,26 @@ ScalaTypeMatch.measurePatternMatch          bar  avgt  100  4.058 ± 0.008  ns/o
 				</section>
 				<section>
 					<h2>Inside pattern matching</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="asm">
-<span class="fragment highlight-current-green">mov    0x10(%r8),%r10d    ;*getfield someClass // someClass = Baz</span>
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="asm"><span class="fragment highlight-current-green">mov    0x10(%r8),%r10d    ;*getfield someClass // someClass = Baz</span>
 <span class="fragment highlight-current-green">mov    0x8(%r12,%r10,8),%ecx  ;*instanceof</span>
-<span class="fragment highlight-current-green">cmp    $0xf8019288,%ecx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Foo&apos;)}</span>
+<span class="fragment highlight-current-green">cmp    $0xf8019288,%ecx   ;{metadata(&apos;ru/jugvrn/ScalaTypeMatch$Foo&apos;)}</span>
 <span class="fragment highlight-current-green">je     0x00007f3e0d222734  ;*ifeq</span>
-<span class="fragment highlight-current-green">cmp    $0xf8019306,%ecx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Bar&apos;)}</span>
+<span class="fragment highlight-current-green">cmp    $0xf8019306,%ecx   ;{metadata(&apos;ru/jugvrn/ScalaTypeMatch$Bar&apos;)}</span>
 <span class="fragment highlight-current-green">je     0x00007f3e0d222761  ;*ifeq</span>
-<span class="fragment highlight-current-green">cmp    $0xf8019248,%ecx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Baz&apos;)}</span>
+<span class="fragment highlight-current-green">cmp    $0xf8019248,%ecx   ;{metadata(&apos;ru/jugvrn/ScalaTypeMatch$Baz&apos;)}</span>
 <span class="fragment highlight-current-green">jne    0x00007f3e0d22281d  ;*instanceof</span>
 ...
 <span class="fragment highlight-current-green">callq  0x00007f3e0d046020  ; *invokevirtual consume</span></code></pre>
 				</section>
 				<section>
 					<h2>Inside if-else</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="asm">
-mov    0x10(%r8),%r11d    ;*getfield someClass
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="asm">mov    0x10(%r8),%r11d    ;*getfield someClass
 mov    0x8(%r12,%r11,8),%edx  ;*instanceof
-cmp    $0xf8019288,%edx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Foo&apos;)}
+cmp    $0xf8019288,%edx   ;{metadata(&apos;ru/jugvrn/ScalaTypeMatch$Foo&apos;)}
 je     0x00007faa4522ac3b  ;*ifeq
-cmp    $0xf8019306,%edx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Bar&apos;)}
+cmp    $0xf8019306,%edx   ;{metadata(&apos;ru/jugvrn/ScalaTypeMatch$Bar&apos;)}
 je     0x00007faa4522ac71  ;*ifeq
-cmp    $0xf8019248,%edx   ;   {metadata(&apos;ru/jugvrn/ScalaTypeMatch$Baz&apos;)}
+cmp    $0xf8019248,%edx   ;{metadata(&apos;ru/jugvrn/ScalaTypeMatch$Baz&apos;)}
 jne    0x00007faa4522ad31  ;*instanceof
 ...
 callq  0x00007faa45046020  ; *invokevirtual consume</code></pre>
@@ -343,27 +339,24 @@ callq  0x00007faa45046020  ; *invokevirtual consume</code></pre>
 				</section>
 				<section>
 					<h2>What about Options?</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">@Setup
-def setup() = {
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="scala">@Setup def setup() = {
 	someString = Some("hello")
 	nullableString = "hello"
 }
 
-@Benchmark
-def measureMatchOption() = someString match {
+@Benchmark def measureMatchOption() = someString match {
   case Some(str) => str
   case _ => "default value"
 }
 
-@Benchmark
-def measureIfNull() = if (nullableString != null)
+@Benchmark def measureIfNull() = if (nullableString != null)
   nullableString
 else
   "default value"</code></pre>
 				</section>
 				<section>
 					<h2>Results</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="scala">
 Benchmark                            Mode  Cnt  Score   Error  Units
 ScalaOptionMatch.measureIfNull       avgt  100  3.677 ± 0.035  ns/op
 ScalaOptionMatch.measureMatchOption  avgt  100  4.153 ± 0.066  ns/op
@@ -376,30 +369,26 @@ ScalaOptionMatch.measureMatchOption  avgt  100  4.153 ± 0.066  ns/op
 				</section>
 				<section>
 					<h2>Inside nullcheck</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="asm">
-mov    0x10(%r10),%r11d   ;*getfield nullableString
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="asm">mov    0x10(%r10),%r11d   ;*getfield nullableString
 test   %r11d,%r11d
 je     0x00007fb929230422  ;*ifnull
 lea    (%r12,%r11,8),%rdx  ;*getfield nullableString
 ...
-callq  0x00007fb929046020  ;*invokevirtual consume
-					</code></pre>
+callq  0x00007fb929046020  ;*invokevirtual consume</code></pre>
 				</section>
 				<section>
 					<h2>Inside option matching</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="asm">
-mov    0xc(%r10),%r11d    ;*getfield someString
-mov    0x8(%r12,%r11,8),%r8d  ; implicit exception: dispatches to 0x00007f7be1233739
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="asm">mov    0xc(%r10),%r11d    ;*getfield someString
+mov    0x8(%r12,%r11,8),%r8d  ; implicit exception: dispatches to ...
 cmp    $0xf80191cc,%r8d   ;   {metadata(&apos;scala/Some&apos;)}
 jne    0x00007f7be1233711
 lea    (%r12,%r11,8),%r10  ;*instanceof
 mov    0xc(%r10),%r11d    ;*getfield value
-mov    0x8(%r12,%r11,8),%r10d  ; implicit exception: dispatches to 0x00007f7be1233749
+mov    0x8(%r12,%r11,8),%r10d  ; implicit exception: dispatches to ...
 cmp    $0xf80002da,%r10d  ;   {metadata(&apos;java/lang/String&apos;)}
 jne    0x00007f7be1233725
 ...
-callq  0x00007f7be1046020  ;*invokevirtual consume
-          </code></pre>
+callq  0x00007f7be1046020  ;*invokevirtual consume</code></pre>
 				</section>
 				<section>
 					<h2>What's the difference?</h2>
@@ -427,9 +416,9 @@ callq  0x00007f7be1046020  ;*invokevirtual consume
 				<section>
 					<h2>Tail call optimization</h2>
 					<ul>
-						<li>Compiler trick: transform recursive call into a loop</li>
-						<li>scalac can do it only for <b>tail</b> calls</li>
-						<li>hotspot has no native support for TCO</li>
+						<li class="fragment">Compiler trick: transform recursive call into a loop</li>
+						<li class="fragment">scalac can do it only for <b>tail</b> calls</li>
+						<li class="fragment">hotspot has no native support for TCO</li>
 					</ul>
 				</section>
 				<section>
@@ -439,19 +428,19 @@ callq  0x00007f7be1046020  ;*invokevirtual consume
 				</section>
 				<section>
 					<h2>Recursion: with and without tail</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">@tailrec
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="scala">@tailrec
 private def fibonacciTailRec(n: Int, a:Int, b:Int):Int = n match {
   case 0 => a
   case _ => fibonacciTailRec(n-1, b, a+b)
 }</code></pre>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">def fibonacciRec(n:Int):Int = n match {
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="scala">def fibonacciRec(n:Int):Int = n match {
   case 0 => a
 	case _ => fibonacciRec(n-1, b, a+b)
 }</code></pre>
 				</section>
 				<section>
 					<h2>Old good loop</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">def fibonacciLoop(n:Int):Int = {
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="scala">def fibonacciLoop(n:Int):Int = {
   var a: Int = 0
   var b: Int = 1
   var i: Int = 0
@@ -466,8 +455,7 @@ private def fibonacciTailRec(n: Int, a:Int, b:Int):Int = n match {
 				</section>
 				<section>
 					<h2>Results</h2>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="scala">
-Benchmark                      (N)  Mode  Cnt   Score   Error  Units
+					<pre><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="scala">Benchmark                      (N)  Mode  Cnt   Score   Error  Units
 ScalaFibonacci.measureLoop      10  avgt   10   6.510 ± 0.177  ns/op
 ScalaFibonacci.measureLoop      20  avgt   10  10.431 ± 0.446  ns/op
 ScalaFibonacci.measureLoop      40  avgt   10  20.051 ± 0.026  ns/op
@@ -479,18 +467,23 @@ ScalaFibonacci.measureTailRec   20  avgt   10   9.660 ± 0.190  ns/op
 ScalaFibonacci.measureTailRec   40  avgt   10  20.165 ± 2.081  ns/op
 </code></pre>
 					<ul>
-						<li>measureLoop is close to measureTailRec</li>
-						<li>measureRec is 2x-4x slower than measureTailRec</li>
-						<li>measureTailRec for N=10 is slower than for N=20</li>
+						<li class="fragment">measureLoop is close to measureTailRec</li>
+						<li class="fragment">measureRec is 2x-4x slower than measureTailRec</li>
+						<li class="fragment">measureTailRec for N=10 is slower than for N=20</li>
 					</ul>
+				</section>
+				<section>
+					<h2>Why is non-TCO function so slow?</h2>
+					<img src="images/slowpoke.png" height="300px" class="plain"/>
 				</section>
 				<section>
 					<h2>bytecode to the rescue!</h2>
 					<ul>
-						<li>JVM Bytecode is simple <img src="images/trollface.jpg" height="25px" class="plain" style="margin: 0px;"/></li>
-						<li><b>javap</b>: a tool for class file disassembly</li>
+						<li class="fragment">JVM Bytecode is simple</li>
+						<li class="fragment"><b>javap</b>: a tool for class file disassembly</li>
 					</ul>
-					<pre><code data=trim data-noescape style="padding: 25px;" class="shell">Welcome to Scala 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_102)
+					<pre class="fragment"><code data=trim data-noescape style="padding: 25px; font-size: 25px; line-height: 28px" class="shell">Welcome to Scala 2.11.8
+(Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_102)
 Type in expressions for evaluation. Or try :help.
 
 scala> :javap -c -p ru.jugvrn.ScalaFibonacci
@@ -499,9 +492,6 @@ public class ru.jugvrn.ScalaFibonacci {
 private int N;
 
 ...</code></pre>
-				</section>
-				<section>
-					<h2>Why is non-TCO function so slow?</h2>
 				</section>
 				<section>
 					<h3>Fibonacci with TCO</h3>
@@ -587,8 +577,8 @@ C2, level 4, ru.jugvrn.ScalaFibonacci::fibonacciRec, version 462 (62 bytes)
 				</section>
 				<section>
 					<h2>goto vs invokevirtual</h2>
-					<p>Goto: simple unconditional jump, one x86 instruction.</p>
-					<p>Invokevirtual: a lot of overhead happening under the hood.</p>
+					<p class="fragment">Goto: simple unconditional jump, one x86 instruction.</p>
+					<p class="fragment">Invokevirtual: a lot of overhead happening under the hood.</p>
 				</section>
 				<section>
 					<h2>Why is N=10 slower than N=20?</h2>
@@ -602,6 +592,37 @@ C2, level 4, ru.jugvrn.ScalaFibonacci::fibonacciRec, version 462 (62 bytes)
 				</section>
 				<section>
 					<h2>Loop unroll</h2>
+<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  def fibonacciTCOUnroll(n: Int, a: Int, b: Int): Int = {
+	  if (n == 0) {
+			a
+		} else if (n>16) {
+      val f1 = a + b
+      val f2 = f1 + b
+      val f3 = f2 + f1
+      val f4 = f3 + f2
+      val f5 = f4 + f3
+      // skip f6..f15
+      val f16 = f13 + f14
+      fibonacciTCOUnroll(n - 16, f15, f16)
+		} else {
+      fibonacciTCOUnroll(n - 1, b, a+b)
+    }
+  }
+</code></pre>
+				</section>
+				<section>
+					<h2>Recursive conclusion</h2>
+					<ul>
+						<li class="fragment">TCO is equal to loop</li>
+						<li class="fragment">
+							TCO is cool
+							<ul>
+								<li class="fragment">stop thinking with loops</li>
+								<li class="fragment">stop computing fibonacci numbers</li>
+								<li class="fragment">start writing readable recursive code</li>
+							</ul>
+						</li>
+					</ul>
 				</section>
 				<section>
 					<h2>More about recursion</h2>
@@ -611,28 +632,14 @@ C2, level 4, ru.jugvrn.ScalaFibonacci::fibonacciRec, version 462 (62 bytes)
 						<li><a href="https://wiki.openjdk.java.net/dashboard.action">Oracle HotSpotInternals wiki</a></li>
 					</ul>
 				</section>
-				<section>
-					<h2>Recursive conclusion</h2>
-					<ul>
-						<li>TCO is equals to loop</li>
-						<li>
-							TCO is cool
-							<ul>
-								<li>stop thinking with loops</li>
-								<li>stop computing fibonacci numbers</li>
-								<li>start writing readable recursive code</li>
-							</ul>
-						</li>
-					</ul>
-				</section>
 				<section data-background="images/slowpoke_collection.png">
 					<h2><span style="background-color: white; padding: 10px">Collections</span></h2>
 				</section>
 				<section>
 					<h2>Scala collections</h2>
 					<ul>
-						<li>Easy way to do complex things</li>
-						<li>Cool things cannot be free: what's the overhead?</li>
+						<li class="fragment">Easy way to do complex things</li>
+						<li class="fragment">Cool things cannot be free: what's the overhead?</li>
 					</ul>
 				</section>
 				<section>
@@ -652,21 +659,20 @@ C2, level 4, ru.jugvrn.ScalaFibonacci::fibonacciRec, version 462 (62 bytes)
 						<li>Given a sequence of integer numbers</li>
 						<li>Compute sum of their squares</li>
 					</ul>
-					<pre><code>
+					<pre><code style=" font-size: 25px; line-height: 28px">
   in: [1, 2, 3]
   out: 1^2 + 2^2 + 3^2 = 14
 					</code></pre>
 				</section>
 				<section>
 					<h2>Old-school solution</h2>
-					<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">
-val array:Array[Int] = ???
+					<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px; font-size: 25px; line-height: 28px" class="scala">val array:Array[Int] = ???
 
 @Benchmark
 def baseline:Long = {
   var i = 0
   var sum = 0L
-  while (i &lt SIZE) {
+  while (i &lt; SIZE) {
 	  sum += array(i) * array(i)
 	  i += 1
 	}
@@ -676,14 +682,12 @@ def baseline:Long = {
 				</section>
 				<section>
 					<h2>FP-way</h2>
-					<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">
-val list:List[Int] = ???
+					<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px; font-size: 25px; line-height: 28px" class="scala">val list:List[Int] = ???
 
 @Benchmark
 def foldList:Long = {
   list.foldLeft(0L)( (sum, next) => sum + next*next)
-}
-					</code></pre>
+}	</code></pre>
 				</section>
 				<section>
 					<h2>Quiz</h2>
@@ -697,13 +701,13 @@ def foldList:Long = {
 				</section>
 				<section>
 					<h2>Results</h2>
-<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
-  ScalaListSquares.baseline       100  avgt  100     71.695 ±   0.524  ns/op
-	ScalaListSquares.baseline      1000  avgt  100    655.157 ±   2.248  ns/op
-	ScalaListSquares.baseline     10000  avgt  100   6457.211 ±  17.542  ns/op
-	ScalaListSquares.foldList       100  avgt  100    525.201 ±   5.903  ns/op
-	ScalaListSquares.foldList      1000  avgt  100   4880.612 ±  23.996  ns/op
-	ScalaListSquares.foldList     10000  avgt  100  47098.707 ±  67.334  ns/op
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px; font-size: 25px; line-height: 28px" class="scala">  Benchmark   (SIZE)  Mode  Cnt      Score     Error  Units
+  baseline       100  avgt  100     71.695 ±   0.524  ns/op
+	baseline      1000  avgt  100    655.157 ±   2.248  ns/op
+	baseline     10000  avgt  100   6457.211 ±  17.542  ns/op
+	foldList       100  avgt  100    525.201 ±   5.903  ns/op
+	foldList      1000  avgt  100   4880.612 ±  23.996  ns/op
+	foldList     10000  avgt  100  47098.707 ±  67.334  ns/op
 </code></pre>
 					<ul>
 						<li class="fragment">List != Array</li>
@@ -712,7 +716,7 @@ def foldList:Long = {
 				<section>
 					<h2>JMH perf profiler</h2>
 					Hardware performance counters to the rescue!
-					<pre><code  data=trim data-noescape style="padding: 15px; max-height: 600px;" class="scala">
+					<pre><code  data=trim data-noescape style="padding: 15px; max-height: 600px; font-size: 25px; line-height: 28px" class="scala">
   jmh:run -prof perf ru.jugvrn.ScalaListSquares.*
 					</code></pre>
 				</section>
@@ -774,8 +778,7 @@ def foldList:Long = {
 				</section>
 			  <section>
 <h2>Get rid of List!</h2>
-<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">
-	val array:Array[Int] = ???
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px; font-size: 25px; line-height: 28px" class="scala">	val array:Array[Int] = ???
 
 	@Benchmark
 	def foldArray:Long = {
@@ -786,7 +789,7 @@ def foldList:Long = {
 			  </section>
 			<section>
        <h2>Results</h2>
-<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px; font-size: 22px; line-height: 28px" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
 	ScalaListSquares.baseline       100  avgt  100     71.695 ±   0.524  ns/op
 	ScalaListSquares.baseline      1000  avgt  100    655.157 ±   2.248  ns/op
 	ScalaListSquares.baseline     10000  avgt  100   6457.211 ±  17.542  ns/op
@@ -802,13 +805,13 @@ def foldList:Long = {
 			<section>
 				<h2>JMH Gc profiler</h2>
 				<p>Lightweight low-overhead JMX-based GC profiling</p>
-				<pre><code  data=trim data-noescape style="padding: 15px; max-height: 600px;" class="scala">
+				<pre><code  data=trim data-noescape style="padding: 15px; max-height: 600px; font-size: 25px; line-height: 28px" class="scala">
 jmh:run -prof gc ru.jugvrn.ScalaListSquares.foldArray
 				</code></pre>
 			</section>
 			<section>
 				<h2>GC profiling results</h2>
-<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">foldArray                                       88434.926 ± 4464.565   ns/op
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px; font-size: 22px; line-height: 28px" class="scala">foldArray                                       88434.926 ± 4464.565   ns/op
 <mark>foldArray:·gc.alloc.rate                         1682.633 ±   81.873  MB/sec</mark>
 foldArray:·gc.alloc.rate.norm                  155936.207 ±    0.497    B/op
 foldArray:·gc.churn.PS_Eden_Space                1683.088 ±  130.033  MB/sec
@@ -826,7 +829,7 @@ foldArray:·gc.time                                 92.000                 ms
 			</section>
 			<section>
 				<h2>Apples vs Oranges</h2>
-				<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">def baseline:Long = {
+				<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px; font-size: 25px; line-height: 28px" class="scala">def baseline:Long = {
   var i = 0
   var sum = 0L <span class="fragment">// &lt;- primitive long</span>
   while (i &lt; SIZE) {
@@ -835,7 +838,7 @@ foldArray:·gc.time                                 92.000                 ms
   }
   sum
 }</code></pre>
-				<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">def foldArray:Long = {
+				<pre><code data=trim data-noescape style="padding: 15px; max-height: 470px; font-size: 25px; line-height: 28px" class="scala">def foldArray:Long = {
   array.foldLeft(0L)( (sum, next) => sum + next*next) <span class="fragment">// &lt;- boxed Long</span>
 }</code></pre>
 				<p class="fragment">Creating a new object on each iteration</p>
@@ -854,13 +857,10 @@ foldArray:·gc.time                                 92.000                 ms
 			</section>
 			<section>
        <h2>Results with 2.12</h2>
-<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px;" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 470px; font-size: 22px; line-height: 28px" class="scala">  Benchmark                    (SIZE)  Mode  Cnt      Score     Error  Units
 	ScalaListSquares.baseline       100  avgt  100     71.695 ±   0.524  ns/op
 	ScalaListSquares.baseline      1000  avgt  100    655.157 ±   2.248  ns/op
 	ScalaListSquares.baseline     10000  avgt  100   6457.211 ±  17.542  ns/op
-	ScalaListSquares.foldList       100  avgt  100    525.201 ±   5.903  ns/op
-	ScalaListSquares.foldList      1000  avgt  100   4880.612 ±  23.996  ns/op
-	ScalaListSquares.foldList     10000  avgt  100  47098.707 ±  67.334  ns/op
   ScalaListSquares.foldArray      100  avgt  100    470.091 ±   1.249  ns/op
   ScalaListSquares.foldArray     1000  avgt  100   6192.707 ±  12.944  ns/op
   ScalaListSquares.foldArray    10000  avgt  100  60182.719 ± 215.496  ns/op
@@ -868,7 +868,7 @@ foldArray:·gc.time                                 92.000                 ms
 	ScalaListSquares.foldArray12   1000  avgt  100   7114.175 ±  19.649  ns/op
 	ScalaListSquares.foldArray12  10000  avgt  100  71247.456 ± 311.178  ns/op</mark>
 </code></pre>
-				<img src="images/jaw_drop.gif" height="200px"/>
+				<img src="images/jaw_drop.gif" class="fragment" height="200px"/>
 			</section>
 			<section>
 				<h2>Sugar-free scala</h2>
@@ -921,7 +921,7 @@ final def $anonfun$foldArray$1(part: Long, next: Int): Long =
 				<h2>Lambdas in 2.11/2.12</h2>
 				<table>
 					<tr>
-						<td>
+						<td class="fragment">
 							<p>2.11, java7:</p>
 							<ul>
 								<li>FunctionN class wrapper</li>
@@ -929,7 +929,7 @@ final def $anonfun$foldArray$1(part: Long, next: Int): Long =
 								<li>invokevirtual</li>
 							</ul>
 						</td>
-						<td>
+						<td class="fragment">
 							<p>2.12, java8:</p>
 							<ul>
 								<li>lambda as a method</li>
@@ -943,11 +943,11 @@ final def $anonfun$foldArray$1(part: Long, next: Int): Long =
 			</section>
 			<section>
 				<h2>JFunction2</h2>
-<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px;" class="scala">
-package scala.runtime.java8;
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px; font-size: 25px; line-height: 28px" class="scala">package scala.runtime.java8;
 
 @FunctionalInterface
-public interface JFunction2$mcDII$sp extends scala.Function2, java.io.Serializable {
+public interface JFunction2$mcDII$sp
+    extends scala.Function2, java.io.Serializable {
   double apply$mcDII$sp(int v1, int v2);
 
   default Object apply(Object v1, Object v2) {
@@ -967,8 +967,8 @@ public interface JFunction2$mcDII$sp extends scala.Function2, java.io.Serializab
 			</section>
 			<section>
 				<h2>2.11: hottest methods</h2>
-<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px;" class="scala">....[Hottest Methods (after inlining)]...........................................
-96.29%   97.82%     C2, level 4  ru.jugvrn.generated.ScalaListSquares_foldArray_jmhTest
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px; font-size: 23px; line-height: 28px" class="scala">....[Hottest Methods (after inlining)]...................................
+96.29%   97.82%     C2, level 4  r.j.g.ScalaListSquares_foldArray_jmhTest
  0.37%    0.19%       libjvm.so  StringTable::unlink_or_oops_do
  0.34%    0.08%       libjvm.so  SpinPause
  0.16%    0.04%       libjvm.so  ParallelTaskTerminator::offer_termination
@@ -979,10 +979,10 @@ public interface JFunction2$mcDII$sp extends scala.Function2, java.io.Serializab
 			</section>
 			<section>
 				<h2>2.12: hottest methods</h2>
-<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px;" class="scala">....[Hottest Methods (after inlining)]...........................................
-89.76%   91.56%     C2, level 4  ru.jugvrn.generated.ScalaListSquares_foldArray_jmhTest
- 4.71%    4.70%     C2, level 4  scala.collection.mutable.ArrayOps$ofLong::foldLeft
- 0.44%    0.45%     C2, level 4  ru.jugvrn.ScalaListSquares::foldArray, version 780
+<pre><code  data=trim data-noescape style="padding: 15px; max-height: 550px; font-size: 23px; line-height: 28px" class="scala">....[Hottest Methods (after inlining)]...................................
+89.76%   91.56%     C2, level 4  r.j.g.ScalaListSquares_foldArray_jmhTest
+ 4.71%    4.70%     C2, level 4  s.c.m.ArrayOps$ofLong::foldLeft
+ 0.44%    0.45%     C2, level 4  r.j.ScalaListSquares::foldArray
  0.26%    0.01%       libjvm.so  SpinPause
  0.20%    0.29%       libjvm.so  StringTable::unlink_or_oops_do
  0.17%    0.10%       libjvm.so  fileStream::write
@@ -993,24 +993,24 @@ public interface JFunction2$mcDII$sp extends scala.Function2, java.io.Serializab
 			<section>
 				<h2>Scala collections</h2>
 				<ul>
-					<li>Be aware of boxing</li>
-					<li>Even Array can cause boxing</li>
-					<li>Alternative collections: debox, abc</li>
+					<li class="fragment">Be aware of boxing</li>
+					<li class="fragment">Even Array can cause boxing</li>
+					<li class="fragment">Alternative collections: debox, abc</li>
 				</ul>
 			</section>
 			<section>
 				<h2>The end</h2>
-				<p>Scala is slow:</p>
+				<p class="fragment">Scala can be slow:</p>
 				<ul>
-					<li>simple to write beautiful, but slow code</li>
-					<li>collections + primitives = pain</li>
-					<li>JVM doesn't like scalac bytecode</li>
+					<li class="fragment">easy to write beautiful, but slow code</li>
+					<li class="fragment">collections + primitives = pain</li>
+					<li class="fragment">JVM doesn't like scalac bytecode</li>
 				</ul>
 				<br/><br/>
-				<p>Scala is fast:</p>
+				<p class="fragment">Scala can be fast:</p>
 				<ul>
-					<li>Know your bytecode: beautiful code can be fast</li>
-					<li>Scala 2.12 is more JVM-friendly</li>
+					<li class="fragment">Know your roots: beautiful code can be fast</li>
+					<li class="fragment">Scala 2.12 is more JVM-friendly</li>
 				</ul>
 			</section>
 			<section>
